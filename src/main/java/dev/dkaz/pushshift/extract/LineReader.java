@@ -18,7 +18,6 @@ public class LineReader implements Runnable {
     @Override
     public void run() {
         ByteBuffer inBuf = ByteBuffer.allocate(1024 * 1024);
-        // TODO determine decompressed buffer size without guessing
         ByteBuffer zstBuf = ByteBuffer.allocate(1024 * 1024 * 16);
         // wrap instead of allocating so we can access the array directly
         CharBuffer chBuf = CharBuffer.wrap(new char[1024 * 1024 * 16]);
@@ -38,17 +37,15 @@ public class LineReader implements Runnable {
 
             while (true) {
                 int numBytesRead = inChannel.read(inBuf);
-                if (numBytesRead == -1 && zstBuf.position() == 0) break;
+                if (numBytesRead == -1 && inBuf.position() == 0 && zstBuf.position() == 0) break;
                 if (numBytesRead > 0) ProgressMonitor.numBytesRead.addAndGet(numBytesRead);
 
                 inBuf.flip();
-                while (inBuf.hasRemaining()) {
-                    zstd.read(zstBuf);
-                }
-                inBuf.clear();
+                zstd.read(zstBuf);
+                inBuf.compact();
 
                 zstBuf.flip();
-                csd.decode(zstBuf, chBuf, numBytesRead == -1);
+                csd.decode(zstBuf, chBuf, numBytesRead == -1 && inBuf.position() == 0);
                 // zstBuf may not be fully processed if a multi-byte UTF-8 character was split across the buffer boundary
                 // and couldn't be decoded, i.e. there can be up to 3 bytes remaining
                 zstBuf.compact();
