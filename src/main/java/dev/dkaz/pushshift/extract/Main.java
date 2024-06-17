@@ -10,7 +10,8 @@ public class Main {
         try {
             Args.parse(args);
             EXECUTOR_SERVICE.submit(new LineReader());
-            EXECUTOR_SERVICE.submit(new LineWriter()).get();
+            EXECUTOR_SERVICE.submit(new LineWriter());
+            EXECUTOR_SERVICE.submit(new ProgressMonitor()).get();
             EXECUTOR_SERVICE.shutdown();
         } catch (Exception e) {
             System.err.println(e.toString());

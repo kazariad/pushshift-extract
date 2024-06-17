@@ -17,11 +17,12 @@ public class LineFilter implements Runnable {
             if (line == LineReader.EOF || Args.regex.matcher(line).matches()) {
                 previousFuture.get();
                 LineWriter.WRITER_QUEUE.put(line);
+                if (line != LineReader.EOF) ProgressMonitor.numMatchedLines.incrementAndGet();
             } else {
                 previousFuture.get();
             }
         } catch (Exception e) {
-            System.err.println(e.toString());
+            ProgressMonitor.numFailedLines.incrementAndGet();
         }
     }
 }

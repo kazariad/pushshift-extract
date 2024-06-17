@@ -16,10 +16,7 @@ public class LineWriter implements Runnable {
         byte[] LF = "\n".getBytes(StandardCharsets.UTF_8);
         boolean isFirstLine = true;
 
-        try (
-                FileChannel outChannel = FileChannel.open(Args.outputPath,
-                        StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
-        ) {
+        try (FileChannel outChannel = FileChannel.open(Args.outputPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
             for (String line = WRITER_QUEUE.take(); line != LineReader.EOF; line = WRITER_QUEUE.take()) {
                 if (isFirstLine) {
                     isFirstLine = false;
@@ -27,6 +24,7 @@ public class LineWriter implements Runnable {
                     outBuf.put(LF);
                 }
                 outBuf.put(line.getBytes(StandardCharsets.UTF_8));
+
                 outBuf.flip();
                 while (outBuf.hasRemaining()) {
                     outChannel.write(outBuf);
@@ -37,5 +35,7 @@ public class LineWriter implements Runnable {
             System.err.println(e.toString());
             System.exit(1);
         }
+
+        ProgressMonitor.isFinished.set(true);
     }
 }

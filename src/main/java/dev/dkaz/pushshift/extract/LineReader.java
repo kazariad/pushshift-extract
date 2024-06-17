@@ -34,9 +34,12 @@ public class LineReader implements Runnable {
                 FileChannel inChannel = FileChannel.open(Args.inputPath, StandardOpenOption.READ);
                 ZstdBufferDecompressingStream zstd = new ZstdBufferDecompressingStream(inBuf);
         ) {
+            ProgressMonitor.fileSize.set(inChannel.size());
+
             while (true) {
-                int bytesRead = inChannel.read(inBuf);
-                if (bytesRead == -1 && zstBuf.position() == 0) break;
+                int numBytesRead = inChannel.read(inBuf);
+                if (numBytesRead == -1 && zstBuf.position() == 0) break;
+                if (numBytesRead > 0) ProgressMonitor.numBytesRead.addAndGet(numBytesRead);
 
                 inBuf.flip();
                 while (inBuf.hasRemaining()) {
@@ -45,7 +48,7 @@ public class LineReader implements Runnable {
                 inBuf.clear();
 
                 zstBuf.flip();
-                csd.decode(zstBuf, chBuf, bytesRead == -1);
+                csd.decode(zstBuf, chBuf, numBytesRead == -1);
                 // zstBuf may not be fully processed if a multi-byte UTF-8 character was split across the buffer boundary
                 // and couldn't be decoded, i.e. there can be up to 3 bytes remaining
                 zstBuf.compact();
