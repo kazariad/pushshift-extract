@@ -34,7 +34,7 @@ public class ProgressMonitor implements Runnable {
             if (isFinished.get()) return;
 
             try {
-                Thread.sleep(1000);
+                Thread.sleep(500);
             } catch (InterruptedException ie) {
             }
         }
