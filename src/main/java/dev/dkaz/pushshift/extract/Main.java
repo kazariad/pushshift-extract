@@ -2,7 +2,9 @@ package dev.dkaz.pushshift.extract;
 
 import dev.dkaz.pushshift.extract.filter.LineEntry;
 import dev.dkaz.pushshift.extract.filter.LineFilterAll;
+import dev.dkaz.pushshift.extract.filter.LineFilterJS;
 import dev.dkaz.pushshift.extract.filter.LineFilterRegex;
+import org.graalvm.polyglot.Engine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +15,7 @@ public class Main {
     // create a unique, non-cached instance for equality comparison (==)
     public static final String EOF = new String("EOF");
     public static final ThreadGroup FILTER_THREAD_GROUP = new ThreadGroup("FILTER_THREAD_GROUP");
+    public static final Engine ENGINE = Engine.newBuilder().option("engine.WarnInterpreterOnly", "false").build();
     public static BlockingQueue<LineEntry> FILTER_QUEUE;
     public static BlockingQueue<String> WRITER_QUEUE;
 
@@ -28,17 +31,19 @@ public class Main {
 
             List<Thread> threads = new ArrayList<>();
             threads.add(new Thread(new LineReader()));
-            for (int i = 0; i < numThreads; i++) {
-                if (Args.regex == null) {
-                    threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterAll()));
-                } else {
-                    threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterRegex()));
-                }
+            if (Args.jsScript != null) {
+                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterJS()));
+            } else if (Args.regex != null) {
+                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterRegex()));
+            } else {
+                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterAll()));
             }
             threads.add(new Thread(new LineWriter()));
             threads.add(new Thread(new ProgressMonitor()));
             for (Thread t : threads) t.start();
             for (Thread t : threads) t.join();
+
+            ENGINE.close();
         } catch (Exception e) {
             System.err.println(e.toString());
             System.exit(1);

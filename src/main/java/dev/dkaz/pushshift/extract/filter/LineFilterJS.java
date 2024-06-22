@@ -1,27 +1,16 @@
 package dev.dkaz.pushshift.extract.filter;
 
+import dev.dkaz.pushshift.extract.Args;
 import dev.dkaz.pushshift.extract.Main;
 import dev.dkaz.pushshift.extract.ProgressMonitor;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.Value;
 
 public class LineFilterJS implements Runnable {
-    private static final String CODE = """
-            (function myFun(line){
-                const obj = JSON.parse(line);
-                return obj.subreddit.toUpperCase() === 'NBA';
-            })
-            """;
-
     @Override
     public void run() {
-        try (
-                Engine engine = Engine.newBuilder().option("engine.WarnInterpreterOnly", "false").build();
-                Context context = Context.newBuilder("js").engine(engine).build()
-        ) {
-            Value filterFunc = context.eval("js", CODE);
-
+        try (Context context = Context.newBuilder("js").engine(Main.ENGINE).allowAllAccess(true).build()) {
+            Value bindings = context.getBindings("js");
             LineEntry lineEntry = null;
             while (true) {
                 try {
@@ -34,7 +23,13 @@ public class LineFilterJS implements Runnable {
                         return;
                     }
 
-                    if (filterFunc.execute(lineEntry.getLine()).asBoolean()) {
+                    bindings.putMember("line", lineEntry.getLine());
+                    bindings.putMember("isMatch", Boolean.FALSE);
+                    // https://github.com/oracle/graal/issues/5071
+                    context.eval(Args.jsScript);
+                    Value isMatch = bindings.getMember("isMatch");
+
+                    if (isMatch.asBoolean()) {
                         lineEntry.getPreviousFuture().get();
                         Main.WRITER_QUEUE.put(lineEntry.getLine());
                         ProgressMonitor.numMatchedLines.incrementAndGet();
