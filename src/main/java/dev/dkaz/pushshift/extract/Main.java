@@ -1,7 +1,8 @@
 package dev.dkaz.pushshift.extract;
 
 import dev.dkaz.pushshift.extract.filter.LineEntry;
-import dev.dkaz.pushshift.extract.filter.LineFilterPython;
+import dev.dkaz.pushshift.extract.filter.LineFilterAll;
+import dev.dkaz.pushshift.extract.filter.LineFilterRegex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,13 @@ public class Main {
 
             List<Thread> threads = new ArrayList<>();
             threads.add(new Thread(new LineReader()));
-            for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterPython()));
+            for (int i = 0; i < numThreads; i++) {
+                if (Args.regex == null) {
+                    threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterAll()));
+                } else {
+                    threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterRegex()));
+                }
+            }
             threads.add(new Thread(new LineWriter()));
             threads.add(new Thread(new ProgressMonitor()));
             for (Thread t : threads) t.start();

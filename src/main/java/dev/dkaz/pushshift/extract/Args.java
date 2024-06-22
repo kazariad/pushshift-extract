@@ -17,12 +17,15 @@ public class Args {
         for (int i = 0; i < args.length; ) {
             switch (args[i++].toLowerCase()) {
                 case "-i":
+                    if (inputPath != null) invalidArgsExit();
                     inputPath = Paths.get(args[i++]);
                     break;
                 case "-o":
+                    if (outputPath != null) invalidArgsExit();
                     outputPath = Paths.get(args[i++]);
                     break;
                 case "-r":
+                    if (regex != null) invalidArgsExit();
                     regex = Pattern.compile(args[i++]);
                     break;
                 default:
@@ -36,10 +39,6 @@ public class Args {
 
         if (outputPath == null) {
             outputPath = inputPath.resolveSibling(inputPath.getFileName().toString().split("\\.")[0] + ".ndjson");
-        }
-
-        if (regex == null) {
-            regex = Pattern.compile(".*");
         }
     }
 
