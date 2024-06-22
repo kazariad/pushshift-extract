@@ -1,28 +1,16 @@
 package dev.dkaz.pushshift.extract.filter;
 
+import dev.dkaz.pushshift.extract.Args;
 import dev.dkaz.pushshift.extract.Main;
 import dev.dkaz.pushshift.extract.ProgressMonitor;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.Value;
 
 public class LineFilterPython implements Runnable {
-    private static final String CODE = """
-            import json
-            
-            def filterFunc(line):
-                dict = json.loads(line)
-                return dict["subreddit"].upper() == "NBA"
-            """;
-
     @Override
     public void run() {
-        try (
-                Engine engine = Engine.newBuilder().option("engine.WarnInterpreterOnly", "false").build();
-                Context context = Context.newBuilder("python").engine(engine).build()
-        ) {
-            Value filterFunc = context.eval("python", CODE).getMember("filterFunc");
-
+        try (Context context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build()) {
+            Value bindings = context.getBindings("python");
             LineEntry lineEntry = null;
             while (true) {
                 try {
@@ -35,7 +23,13 @@ public class LineFilterPython implements Runnable {
                         return;
                     }
 
-                    if (filterFunc.execute(lineEntry.getLine()).asBoolean()) {
+                    bindings.putMember("line", lineEntry.getLine());
+                    bindings.putMember("isMatch", Boolean.FALSE);
+                    // https://github.com/oracle/graal/issues/5071
+                    context.eval(Args.pyScript);
+                    Value isMatch = bindings.getMember("isMatch");
+
+                    if (isMatch.asBoolean()) {
                         lineEntry.getPreviousFuture().get();
                         Main.WRITER_QUEUE.put(lineEntry.getLine());
                         ProgressMonitor.numMatchedLines.incrementAndGet();

@@ -13,6 +13,7 @@ public class Args {
     public static Path inputPath;
     public static Path outputPath;
     public static Source jsScript;
+    public static Source pyScript;
     public static Pattern regex;
 
     public static void parse(String[] args) throws Exception {
@@ -38,6 +39,14 @@ public class Args {
                         context.parse(jsScript);
                     }
                     break;
+                case "-p":
+                    if (pyScript != null) invalidArgsExit();
+                    pyScript = Source.newBuilder("python", Paths.get(args[i++]).toFile()).build();
+                    // validate script
+                    try (Context context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build()) {
+                        context.parse(pyScript);
+                    }
+                    break;
                 case "-r":
                     if (regex != null) invalidArgsExit();
                     regex = Pattern.compile(args[i++]);
@@ -55,13 +64,13 @@ public class Args {
             outputPath = inputPath.resolveSibling(inputPath.getFileName().toString().split("\\.")[0] + ".ndjson");
         }
 
-        if (Stream.of(jsScript, regex).filter(Objects::nonNull).count() > 1) {
+        if (Stream.of(jsScript, pyScript, regex).filter(Objects::nonNull).count() > 1) {
             invalidArgsExit();
         }
     }
 
     private static void invalidArgsExit() {
-        System.err.println("Invalid args. Usage: -i inputPath [-o outputPath] [-j jsScriptPath | -r regex]");
+        System.err.println("Invalid args. Usage: -i inputPath [-o outputPath] [-j jsScriptPath | -p pyScriptPath | -r regex]");
         System.exit(1);
     }
 }
