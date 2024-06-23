@@ -8,7 +8,7 @@ public class RegexFilter implements FilterStrategy {
     };
 
     @Override
-    public boolean filterLine(String line) {
+    public boolean isAllowed(String line) {
         return Args.regex.matcher(line).matches();
     }
 

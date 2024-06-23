@@ -26,10 +26,10 @@ public class FilterRunner implements Runnable {
                         return;
                     }
 
-                    boolean isMatch = filter.filterLine(lineEntry.getLine());
+                    boolean isAllowed = filter.isAllowed(lineEntry.getLine());
 
                     lineEntry.getPreviousFuture().get();
-                    if (isMatch) {
+                    if (isAllowed) {
                         Main.WRITER_QUEUE.put(lineEntry.getLine());
                         ProgressMonitor.numMatchedLines.incrementAndGet();
                     }

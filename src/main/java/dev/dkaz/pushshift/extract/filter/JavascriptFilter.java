@@ -19,11 +19,11 @@ public class JavascriptFilter implements FilterStrategy {
     private Value script;
 
     @Override
-    public boolean filterLine(String line) {
+    public boolean isAllowed(String line) {
         bindings.putMember("line", line);
-        bindings.putMember("isMatch", Boolean.FALSE);
+        bindings.putMember("allow", Boolean.FALSE);
         script.execute();
-        return bindings.getMember("isMatch").asBoolean();
+        return bindings.getMember("allow").asBoolean();
     }
 
     @Override

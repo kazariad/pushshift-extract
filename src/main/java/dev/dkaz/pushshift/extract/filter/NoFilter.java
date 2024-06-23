@@ -6,7 +6,7 @@ public class NoFilter implements FilterStrategy {
     };
 
     @Override
-    public boolean filterLine(String line) {
+    public boolean isAllowed(String line) {
         return true;
     }
 

@@ -17,11 +17,11 @@ public class PythonFilter implements FilterStrategy {
     private Value bindings;
 
     @Override
-    public boolean filterLine(String line) {
+    public boolean isAllowed(String line) {
         bindings.putMember("line", line);
-        bindings.putMember("isMatch", Boolean.FALSE);
+        bindings.putMember("allow", Boolean.FALSE);
         context.eval(Args.pyScript);
-        return bindings.getMember("isMatch").asBoolean();
+        return bindings.getMember("allow").asBoolean();
     }
 
     @Override
