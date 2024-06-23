@@ -3,6 +3,7 @@ package dev.dkaz.pushshift.extract;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -33,8 +34,9 @@ public class Args {
                     break;
                 case "-j":
                     if (jsScript != null) invalidArgsExit();
-                    jsScript = Source.newBuilder("js", Paths.get(args[i++]).toFile()).build();
-                    // validate script
+                    String script = Files.readString(Paths.get(args[i++]));
+                    jsScript = Source.create("js", String.format("(function outer(){%s})", script));
+                    // validation
                     try (Context context = Context.newBuilder("js").engine(Main.ENGINE).allowAllAccess(true).build()) {
                         context.parse(jsScript);
                     }
