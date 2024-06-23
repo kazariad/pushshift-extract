@@ -11,6 +11,7 @@ public class LineFilterPython implements Runnable {
     public void run() {
         try (Context context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build()) {
             Value bindings = context.getBindings("python");
+
             LineEntry lineEntry = null;
             while (true) {
                 try {
@@ -25,21 +26,19 @@ public class LineFilterPython implements Runnable {
 
                     bindings.putMember("line", lineEntry.getLine());
                     bindings.putMember("isMatch", Boolean.FALSE);
-                    // https://github.com/oracle/graal/issues/5071
                     context.eval(Args.pyScript);
-                    Value isMatch = bindings.getMember("isMatch");
+                    boolean isMatch = bindings.getMember("isMatch").asBoolean();
 
-                    if (isMatch.asBoolean()) {
-                        lineEntry.getPreviousFuture().get();
+                    lineEntry.getPreviousFuture().get();
+                    if (isMatch) {
                         Main.WRITER_QUEUE.put(lineEntry.getLine());
                         ProgressMonitor.numMatchedLines.incrementAndGet();
-                    } else {
-                        lineEntry.getPreviousFuture().get();
                     }
                 } catch (InterruptedException ie) {
                     lineEntry = null;
                     return;
                 } catch (Exception e) {
+                    lineEntry.getPreviousFuture().get();
                     ProgressMonitor.numFailedLines.incrementAndGet();
                 } finally {
                     if (lineEntry != null) lineEntry.getCurrentFuture().complete(null);

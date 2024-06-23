@@ -24,15 +24,17 @@ public class Args {
 
         for (int i = 0; i < args.length; ) {
             switch (args[i++].toLowerCase()) {
-                case "-i":
+                case "-i": {
                     if (inputPath != null) invalidArgsExit();
                     inputPath = Paths.get(args[i++]);
                     break;
-                case "-o":
+                }
+                case "-o": {
                     if (outputPath != null) invalidArgsExit();
                     outputPath = Paths.get(args[i++]);
                     break;
-                case "-j":
+                }
+                case "-j": {
                     if (jsScript != null) invalidArgsExit();
                     String script = Files.readString(Paths.get(args[i++]));
                     jsScript = Source.create("js", String.format("(function outer(){%s})", script));
@@ -41,18 +43,21 @@ public class Args {
                         context.parse(jsScript);
                     }
                     break;
-                case "-p":
+                }
+                case "-p": {
                     if (pyScript != null) invalidArgsExit();
                     pyScript = Source.newBuilder("python", Paths.get(args[i++]).toFile()).build();
-                    // validate script
+                    // validation
                     try (Context context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build()) {
                         context.parse(pyScript);
                     }
                     break;
-                case "-r":
+                }
+                case "-r": {
                     if (regex != null) invalidArgsExit();
                     regex = Pattern.compile(args[i++]);
                     break;
+                }
                 default:
                     invalidArgsExit();
             }
