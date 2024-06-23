@@ -3,25 +3,32 @@ package dev.dkaz.pushshift.extract.filter;
 import dev.dkaz.pushshift.extract.Args;
 import dev.dkaz.pushshift.extract.Main;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
 public class PythonFilter implements FilterStrategy {
     public static final FilterFactory FILTER_FACTORY = () -> {
-        PythonFilter filter = new PythonFilter();
-        filter.context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build();
-        filter.bindings = filter.context.getBindings("python");
-        return filter;
+        PythonFilter pf = new PythonFilter();
+        pf.context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build();
+        pf.context.eval(Args.pySource);
+
+        Source conversionWrapper = Source.create("python", """
+                def __filterW(line):
+                    return bool(filter(line))
+                """);
+
+        pf.context.eval(conversionWrapper);
+        pf.filterFunc = pf.context.getBindings("python").getMember("__filterW");
+        return pf;
     };
 
     private Context context;
-    private Value bindings;
+    private Value filterFunc;
 
     @Override
     public boolean isAllowed(String line) {
-        bindings.putMember("line", line);
-        bindings.putMember("allow", Boolean.FALSE);
-        context.eval(Args.pyScript);
-        return bindings.getMember("allow").asBoolean();
+        Value isAllowed = filterFunc.execute(line);
+        return isAllowed.asBoolean();
     }
 
     @Override

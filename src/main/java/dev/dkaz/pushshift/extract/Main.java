@@ -35,9 +35,9 @@ public class Main {
             threads.add(new Thread(new LineReader()));
 
             FilterFactory filterFactory = null;
-            if (Args.jsScript != null) {
+            if (Args.jsSource != null) {
                 filterFactory = JavascriptFilter.FILTER_FACTORY;
-            } else if (Args.pyScript != null) {
+            } else if (Args.pySource != null) {
                 filterFactory = PythonFilter.FILTER_FACTORY;
             } else if (Args.regex != null) {
                 filterFactory = RegexFilter.FILTER_FACTORY;

@@ -2,8 +2,8 @@ package dev.dkaz.pushshift.extract;
 
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -13,8 +13,8 @@ import java.util.stream.Stream;
 public class Args {
     public static Path inputPath;
     public static Path outputPath;
-    public static Source jsScript;
-    public static Source pyScript;
+    public static Source jsSource;
+    public static Source pySource;
     public static Pattern regex;
 
     public static void parse(String[] args) throws Exception {
@@ -35,21 +35,22 @@ public class Args {
                     break;
                 }
                 case "-j": {
-                    if (jsScript != null) invalidArgsExit();
-                    String script = Files.readString(Paths.get(args[i++]));
-                    jsScript = Source.create("js", String.format("(function outer(){%s})", script));
-                    // validation
+                    if (jsSource != null) invalidArgsExit();
+                    jsSource = Source.newBuilder("js", Paths.get(args[i++]).toFile()).build();
                     try (Context context = Context.newBuilder("js").engine(Main.ENGINE).allowAllAccess(true).build()) {
-                        context.parse(jsScript);
+                        context.eval(jsSource);
+                        Value filter = context.getBindings("js").getMember("filter");
+                        if (filter == null || !filter.canExecute()) throw new Exception("Missing filter function in script.");
                     }
                     break;
                 }
                 case "-p": {
-                    if (pyScript != null) invalidArgsExit();
-                    pyScript = Source.newBuilder("python", Paths.get(args[i++]).toFile()).build();
-                    // validation
+                    if (pySource != null) invalidArgsExit();
+                    pySource = Source.newBuilder("python", Paths.get(args[i++]).toFile()).build();
                     try (Context context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build()) {
-                        context.parse(pyScript);
+                        context.eval(pySource);
+                        Value filter = context.getBindings("python").getMember("filter");
+                        if (filter == null || !filter.canExecute()) throw new Exception("Missing filter function in script.");
                     }
                     break;
                 }
@@ -71,7 +72,7 @@ public class Args {
             outputPath = inputPath.resolveSibling(inputPath.getFileName().toString().split("\\.")[0] + ".ndjson");
         }
 
-        if (Stream.of(jsScript, pyScript, regex).filter(Objects::nonNull).count() > 1) {
+        if (Stream.of(jsSource, pySource, regex).filter(Objects::nonNull).count() > 1) {
             invalidArgsExit();
         }
     }
