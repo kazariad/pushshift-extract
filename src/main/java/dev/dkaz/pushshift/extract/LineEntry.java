@@ -1,4 +1,4 @@
-package dev.dkaz.pushshift.extract.filter;
+package dev.dkaz.pushshift.extract;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;

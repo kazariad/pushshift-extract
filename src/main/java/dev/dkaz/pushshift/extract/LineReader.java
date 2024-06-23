@@ -1,7 +1,6 @@
 package dev.dkaz.pushshift.extract;
 
 import com.github.luben.zstd.ZstdBufferDecompressingStream;
-import dev.dkaz.pushshift.extract.filter.LineEntry;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

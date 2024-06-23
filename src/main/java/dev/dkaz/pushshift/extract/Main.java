@@ -1,10 +1,11 @@
 package dev.dkaz.pushshift.extract;
 
-import dev.dkaz.pushshift.extract.filter.LineEntry;
-import dev.dkaz.pushshift.extract.filter.LineFilterAll;
-import dev.dkaz.pushshift.extract.filter.LineFilterJS;
-import dev.dkaz.pushshift.extract.filter.LineFilterPython;
-import dev.dkaz.pushshift.extract.filter.LineFilterRegex;
+import dev.dkaz.pushshift.extract.filter.FilterFactory;
+import dev.dkaz.pushshift.extract.filter.FilterRunner;
+import dev.dkaz.pushshift.extract.filter.JavascriptFilter;
+import dev.dkaz.pushshift.extract.filter.NoFilter;
+import dev.dkaz.pushshift.extract.filter.PythonFilter;
+import dev.dkaz.pushshift.extract.filter.RegexFilter;
 import org.graalvm.polyglot.Engine;
 
 import java.util.ArrayList;
@@ -33,14 +34,18 @@ public class Main {
             List<Thread> threads = new ArrayList<>();
             threads.add(new Thread(new LineReader()));
 
+            FilterFactory filterFactory = null;
             if (Args.jsScript != null) {
-                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterJS()));
+                filterFactory = JavascriptFilter.FILTER_FACTORY;
             } else if (Args.pyScript != null) {
-                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterPython()));
+                filterFactory = PythonFilter.FILTER_FACTORY;
             } else if (Args.regex != null) {
-                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterRegex()));
+                filterFactory = RegexFilter.FILTER_FACTORY;
             } else {
-                for (int i = 0; i < numThreads; i++) threads.add(new Thread(FILTER_THREAD_GROUP, new LineFilterAll()));
+                filterFactory = NoFilter.FILTER_FACTORY;
+            }
+            for (int i = 0; i < numThreads; i++) {
+                threads.add(new Thread(FILTER_THREAD_GROUP, new FilterRunner(filterFactory)));
             }
 
             threads.add(new Thread(new LineWriter()));
