@@ -13,22 +13,22 @@ public class JavascriptFilter implements FilterStrategy {
         jf.context.eval(Args.jsSource);
 
         Source conversionWrapper = Source.create("js", """
-                function __filterW(line) {
-                    return true == filter(line);
+                function __myFilter(line) {
+                    return true == myFilter(line);
                 }
                 """);
 
         jf.context.eval(conversionWrapper);
-        jf.filterFunc = jf.context.getBindings("js").getMember("__filterW");
+        jf.myFilterFunc = jf.context.getBindings("js").getMember("__myFilter");
         return jf;
     };
 
     private Context context;
-    private Value filterFunc;
+    private Value myFilterFunc;
 
     @Override
     public boolean isAllowed(String line) {
-        Value isAllowed = filterFunc.execute(line);
+        Value isAllowed = myFilterFunc.execute(line);
         return isAllowed.asBoolean();
     }
 

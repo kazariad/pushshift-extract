@@ -13,21 +13,21 @@ public class PythonFilter implements FilterStrategy {
         pf.context.eval(Args.pySource);
 
         Source conversionWrapper = Source.create("python", """
-                def __filterW(line):
-                    return bool(filter(line))
+                def __myFilter(line):
+                    return bool(myFilter(line))
                 """);
 
         pf.context.eval(conversionWrapper);
-        pf.filterFunc = pf.context.getBindings("python").getMember("__filterW");
+        pf.myFilterFunc = pf.context.getBindings("python").getMember("__myFilter");
         return pf;
     };
 
     private Context context;
-    private Value filterFunc;
+    private Value myFilterFunc;
 
     @Override
     public boolean isAllowed(String line) {
-        Value isAllowed = filterFunc.execute(line);
+        Value isAllowed = myFilterFunc.execute(line);
         return isAllowed.asBoolean();
     }
 

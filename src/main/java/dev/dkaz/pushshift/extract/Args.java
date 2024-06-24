@@ -39,8 +39,10 @@ public class Args {
                     jsSource = Source.newBuilder("js", Paths.get(args[i++]).toFile()).build();
                     try (Context context = Context.newBuilder("js").engine(Main.ENGINE).allowAllAccess(true).build()) {
                         context.eval(jsSource);
-                        Value filter = context.getBindings("js").getMember("filter");
-                        if (filter == null || !filter.canExecute()) throw new Exception("Missing filter function in script.");
+                        Value myFilter = context.getBindings("js").getMember("myFilter");
+                        if (myFilter == null || !myFilter.canExecute()) {
+                            throw new Exception("Missing 'myFilter' function in script.");
+                        }
                     }
                     break;
                 }
@@ -49,8 +51,10 @@ public class Args {
                     pySource = Source.newBuilder("python", Paths.get(args[i++]).toFile()).build();
                     try (Context context = Context.newBuilder("python").engine(Main.ENGINE).allowAllAccess(true).build()) {
                         context.eval(pySource);
-                        Value filter = context.getBindings("python").getMember("filter");
-                        if (filter == null || !filter.canExecute()) throw new Exception("Missing filter function in script.");
+                        Value myFilter = context.getBindings("python").getMember("myFilter");
+                        if (myFilter == null || !myFilter.canExecute()) {
+                            throw new Exception("Missing 'myFilter' function in script.");
+                        }
                     }
                     break;
                 }
