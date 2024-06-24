@@ -21,7 +21,7 @@ public class ProgressMonitor implements Runnable {
 
             long _fileSize = fileSize.get();
             long _bytesRead = numBytesRead.get();
-            String progress = String.format("%s/%s", humanReadableByteCountSI(_bytesRead), humanReadableByteCountSI(_fileSize));
+            String progress = String.format("%s/%s", humanReadableByteCountBin(_bytesRead), humanReadableByteCountBin(_fileSize));
             String percentage = String.format("%.1f%%", _fileSize == 0 ? 0 : (double) _bytesRead / _fileSize * 100.0);
 
             String matchedLines = String.format("%,d matched lines", numMatchedLines.get());
@@ -41,15 +41,18 @@ public class ProgressMonitor implements Runnable {
     }
 
     // https://stackoverflow.com/questions/3758606/how-can-i-convert-byte-size-into-a-human-readable-format-in-java
-    private static String humanReadableByteCountSI(long bytes) {
-        if (-1000 < bytes && bytes < 1000) {
+    private static String humanReadableByteCountBin(long bytes) {
+        long absB = bytes == Long.MIN_VALUE ? Long.MAX_VALUE : Math.abs(bytes);
+        if (absB < 1024) {
             return bytes + " B";
         }
-        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
-        while (bytes <= -999_950 || bytes >= 999_950) {
-            bytes /= 1000;
+        long value = absB;
+        CharacterIterator ci = new StringCharacterIterator("KMGTPE");
+        for (int i = 40; i >= 0 && absB > 0xfffccccccccccccL >> i; i -= 10) {
+            value >>= 10;
             ci.next();
         }
-        return String.format("%.1f %cB", bytes / 1000.0, ci.current());
+        value *= Long.signum(bytes);
+        return String.format("%.1f %ciB", value / 1024.0, ci.current());
     }
 }
